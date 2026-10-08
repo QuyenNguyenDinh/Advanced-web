@@ -1,0 +1,229 @@
+{
+  "info": {
+    "_postman_id": "a9183492-411a-4293-87bb-781e285d8a99",
+    "name": "Xê Dịch - Authentication & Authorisation (JWT)",
+    "description": "Bộ sưu tập Postman kiểm thử Authentication và Authorisation (RBAC) với NestJS và JWT.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "user_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Đăng ký tài khoản (Register - Hash Bcrypt)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"sinhvien_test\",\n  \"password\": \"Password123@\",\n  \"email\": \"sinhvien@test.vn\",\n  \"name\": \"Sinh Viên Kiểm Thử\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "register"]
+        },
+        "description": "Tạo user mới, mật khẩu sẽ được hash bằng Bcrypt trước khi lưu vào PostgreSQL."
+      },
+      "response": []
+    },
+    {
+      "name": "2. Đăng nhập User thường (Login User -> Lưu Token)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var data = pm.response.json();",
+              "    pm.collectionVariables.set('user_token', data.access_token);",
+              "    console.log('Đã tự động lưu user_token:', data.access_token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"phuotthu\",\n  \"password\": \"User123@\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Đăng nhập với tài khoản role user, nhận access_token."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Đăng nhập Admin (Login Admin -> Lưu Admin Token)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var data = pm.response.json();",
+              "    pm.collectionVariables.set('admin_token', data.access_token);",
+              "    console.log('Đã tự động lưu admin_token:', data.access_token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Admin123@\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Đăng nhập với tài khoản role admin, nhận access_token."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Authentication Test: Profile với JWT Token (200 OK)",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{user_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/profile",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "profile"]
+        },
+        "description": "Xác thực JWT thành công và xem thông tin Profile."
+      },
+      "response": []
+    },
+    {
+      "name": "5. Authentication Test: Profile KHÔNG có Token (401 Unauthorized)",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/profile",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "profile"]
+        },
+        "description": "Không truyền Bearer token, server chặn với mã 401 Unauthorized."
+      },
+      "response": []
+    },
+    {
+      "name": "6. Authorisation Test: Admin vào Admin Dashboard (200 OK)",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{admin_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/admin-dashboard",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "admin-dashboard"]
+        },
+        "description": "Tài khoản có role admin được phép truy cập theo RolesGuard."
+      },
+      "response": []
+    },
+    {
+      "name": "7. Authorisation Test: User vào Admin Dashboard (403 Forbidden)",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{user_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/admin-dashboard",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "admin-dashboard"]
+        },
+        "description": "Tài khoản role user bị RolesGuard từ chối với mã 403 Forbidden."
+      },
+      "response": []
+    },
+    {
+      "name": "8. Đăng xuất (Logout)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/logout",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "logout"]
+        },
+        "description": "Hủy phiên và xóa Cookie."
+      },
+      "response": []
+    }
+  ]
+}

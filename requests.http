@@ -1,0 +1,101 @@
+GET http://localhost:3000/
+
+###
+GET http://localhost:3000/api/destinations
+
+###
+GET http://localhost:3000/api/destinations?featured=true
+
+###
+GET http://localhost:3000/api/destinations/1
+
+###
+POST http://localhost:3000/api/destinations
+Content-Type: application/json
+
+{
+  "slug": "moc-chau",
+  "name": "Mộc Châu - Thảo nguyên xanh ngút ngàn",
+  "description": "Nổi tiếng với đồi chè trái tim, thung lũng mận Nà Ka và thác Dải Yếm thơ mộng.",
+  "cover_image": "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
+  "best_months": "Tháng 1 - Tháng 3",
+  "difficulty": "Dễ",
+  "how_to_get_there": "Xe khách từ bến xe Giáp Bát / Mỹ Đình ~180k - 220k.",
+  "warnings": "Trời lạnh về đêm và sương mù trên quốc lộ 6.",
+  "avg_budget": "1.000.000 - 1.500.000 VNĐ",
+  "is_featured": true
+}
+
+###
+PUT http://localhost:3000/api/destinations/1
+Content-Type: application/json
+
+{
+  "difficulty": "Dễ - Trung bình",
+  "avg_budget": "1.300.000 - 1.900.000 VNĐ"
+}
+
+###
+DELETE http://localhost:3000/api/destinations/3
+
+###
+GET http://localhost:3000/api/auth/cookies-demo
+
+###
+GET http://localhost:3000/api/auth/session-demo
+
+###
+### ========================================================
+### PHẦN TEST AUTHENTICATION & AUTHORISATION (JWT + ROLES)
+### ========================================================
+
+### 1. Đăng ký tài khoản mới (Mật khẩu được hash bằng Bcrypt)
+# @name registerUser
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "phuotthu_new",
+  "password": "Password123@",
+  "email": "phuotthu_new@gmail.com",
+  "name": "Phượt Thủ Mới"
+}
+
+### 2. Đăng nhập User thường (Nhận JWT access_token role 'user')
+# @name loginUser
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "phuotthu",
+  "password": "User123@"
+}
+
+### 3. Đăng nhập Admin (Nhận JWT access_token role 'admin')
+# @name loginAdmin
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "Admin123@"
+}
+
+### 4. Authentication Test: Lấy thông tin Profile bằng JWT Token (Cả User & Admin đều vào được)
+GET http://localhost:3000/api/auth/profile
+Authorization: Bearer {{loginUser.response.body.access_token}}
+
+### 5. Authentication Test: Thử truy cập Profile KHÔNG có Token (Sẽ bị 401 Unauthorized)
+GET http://localhost:3000/api/auth/profile
+
+### 6. Authorisation Test: Admin truy cập API Admin Dashboard (Thành công 200 OK vì có role 'admin')
+GET http://localhost:3000/api/auth/admin-dashboard
+Authorization: Bearer {{loginAdmin.response.body.access_token}}
+
+### 7. Authorisation Test: User thường thử truy cập API Admin Dashboard (Bị chặn 403 Forbidden vì thiếu role 'admin')
+GET http://localhost:3000/api/auth/admin-dashboard
+Authorization: Bearer {{loginUser.response.body.access_token}}
+
+### 8. Đăng xuất (Clear Cookie & Hủy Session)
+POST http://localhost:3000/api/auth/logout
+
